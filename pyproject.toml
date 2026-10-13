@@ -12,6 +12,8 @@ dependencies = ['VapourSynth']
 
 [tool.meson-python.args]
 setup = ['-Dpython_package=true']
+# libass and its dependencies are linked statically; their headers and static libraries stay out of the wheel.
+install = ['--skip-subprojects']
 
 [tool.meson-python.wheel]
 exclude = ['*/*.dll.a', '*/*.lib', '*/*.a']
