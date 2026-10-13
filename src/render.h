@@ -45,6 +45,6 @@ void apply_yuv444(uint8_t** sub_img, uint8_t** data, int32_t* pitch, uint32_t wi
 void apply_y(uint8_t** sub_img, uint8_t** data, int32_t* pitch, uint32_t width, uint32_t height);
 void apply_yv411(uint8_t** sub_img, uint8_t** data, int32_t* pitch, uint32_t width, uint32_t height);
 
-const VSFrameRef* VS_CC assrender_get_frame_vs(int n, int activationReason, void** instanceData, void** frameData, VSFrameContext* frameCtx, VSCore* core, const VSAPI* vsapi);
+const VSFrame* VS_CC assrender_get_frame_vs(int n, int activationReason, void* instanceData, void** frameData, VSFrameContext* frameCtx, VSCore* core, const VSAPI* vsapi);
 
 #endif

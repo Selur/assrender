@@ -78,3 +78,11 @@ TestResult.xml
 [Dd]ebugPS/
 [Rr]eleasePS/
 dlldata.c
+
+# meson build output, downloaded subprojects, wheels
+build/
+dist/
+wheelhouse/
+__pycache__/
+subprojects/*/
+subprojects/packagecache/

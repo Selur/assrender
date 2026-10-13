@@ -9,7 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include <ass/ass.h>
-#include "VapourSynth.h"
+#include "VapourSynth4.h"
 
 #if defined(_MSC_VER)
 #define __NO_ISOCEXT
@@ -64,7 +64,7 @@ typedef struct {
     int greyscale;
 } udata;
 typedef struct {
-    VSNodeRef* node;
+    VSNode* node;
     const VSVideoInfo* vi;
     char* prop;
     void* user_data;

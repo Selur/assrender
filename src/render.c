@@ -909,8 +909,8 @@ void apply_y(uint8_t** sub_img_8, uint8_t** data_8, int32_t* pitch, uint32_t wid
   }
 }
 
-const VSFrameRef* VS_CC assrender_get_frame_vs(int n, int activationReason, void** instanceData, void** frameData, VSFrameContext* frameCtx, VSCore* core, const VSAPI* vsapi) {
-    const VS_FilterInfo* p = *instanceData;
+const VSFrame* VS_CC assrender_get_frame_vs(int n, int activationReason, void* instanceData, void** frameData, VSFrameContext* frameCtx, VSCore* core, const VSAPI* vsapi) {
+    const VS_FilterInfo* p = instanceData;
     if (activationReason == arInitial) {
         vsapi->requestFrameFilter(n, p->node, frameCtx);
     }
@@ -921,12 +921,12 @@ const VSFrameRef* VS_CC assrender_get_frame_vs(int n, int activationReason, void
         int64_t ts;
         int changed;
 
-        const VSFrameRef* src = vsapi->getFrameFilter(n, p->node, frameCtx);
+        const VSFrame* src = vsapi->getFrameFilter(n, p->node, frameCtx);
 
         if (p->prop) {
-            const VSMap *map = vsapi->getFramePropsRO(src);
+            const VSMap *map = vsapi->getFramePropertiesRO(src);
             int err;
-            const char *text = vsapi->propGetData(map, p->prop, 0, &err);
+            const char *text = vsapi->mapGetData(map, p->prop, 0, &err);
             if (text) {
                 // ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text
                 const char *fmt = "%d,0,Default,,0,0,0,,%s\n";
@@ -949,7 +949,7 @@ const VSFrameRef* VS_CC assrender_get_frame_vs(int n, int activationReason, void
             }
         }
 
-        VSFrameRef *dst = vsapi->copyFrame(src, core);
+        VSFrame *dst = vsapi->copyFrame(src, core);
         vsapi->freeFrame(src);
 
         if (!ud->isvfr) {
@@ -966,8 +966,8 @@ const VSFrameRef* VS_CC assrender_get_frame_vs(int n, int activationReason, void
             uint32_t height, width, pitch[2];
             uint8_t* data[3];
 
-            if (p->vi->format->colorFamily != cmCompat && !ud->greyscale) {
-                if (p->vi->format->colorFamily == cmRGB) {
+            if (!ud->greyscale) {
+                if (p->vi->format.colorFamily == cfRGB) {
                     // planar RGB as 444
                     data[0] = vsapi->getWritePtr(dst, 0);
                     data[1] = vsapi->getWritePtr(dst, 1);

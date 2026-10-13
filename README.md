@@ -1,6 +1,6 @@
 # AssRender-Vapoursynth
 
-AssRender-Vapoursynth is a Vapoursynth api3 plugin that renders ASS / SSA and SRT (without the HTML-like markup) subtitles, based on the source of pinterf’s fork. It uses libass to render the subtitles, which makes it the fastest, lower memory usage and most correct ASS renderer for Vapoursynth. Now (version >= 0.37.1) it also provides csri interface, you can use it with some support softwares, such as Aegisub.
+AssRender-Vapoursynth is a VapourSynth API 4 plugin that renders ASS / SSA and SRT (without the HTML-like markup) subtitles, based on the source of pinterf’s fork. It uses libass to render the subtitles, which makes it the fastest, lower memory usage and most correct ASS renderer for Vapoursynth. Now (version >= 0.37.1) it also provides csri interface, you can use it with some support softwares, such as Aegisub.
 
 This also means that it is much more picky about script syntax than VSFilter and friends, so keep that in mind before blaming the filter. Yes, people have reported a lot of errors that were actually the script author’s fault.
 
@@ -95,26 +95,38 @@ c.akarin.Text("FrameNum {N}", prop="ass").assrender.FrameProp()
 
 It have two csri render names: `assrender_textsub` and `assrender_ob_textsub`. `ob` means old behavior, their differences can be referred to description of `set_default_storage_size` in vapoursynth usage.
 
-## Build instructions
+## VapourSynth API 4 and wheels
 
-see `.github/workflows/build.yml`
+This fork targets the VapourSynth API 4 (R55 and newer, required since R80). The namespace `assrender`, the functions
+and their arguments are unchanged; on the tested formats (8/10/16 bit YUV 4:2:0/4:2:2/4:4:4, RGB, Gray) it renders
+byte-identical to the API 3 build.
 
-### Standalone libass package (Windows x64)
+Wheels for Windows x64, Linux x86_64 and macOS arm64 are attached to the GitHub releases:
 
-The dedicated **libass Windows** workflow produces a versioned libass archive with all non-system dependencies and the MSVC runtime linked statically. Its public layout is:
-
-```text
-include/ass/ass.h
-include/ass/ass_types.h
-bin/ass.dll
+```
+pip install vapoursynth_assrender-<version>-py3-none-<platform>.whl
 ```
 
-`LICENSES/` and `VERSIONS.txt` are included for redistribution and traceability. Dependency versions are shared by the assrender and standalone builds in `.github/dependency-versions.env`.
+The wheel puts the plugin into `site-packages/vapoursynth/plugins`, where VapourSynth autoloads it. On Windows and macOS
+libass 0.17.5 and its dependencies are linked statically (fonts through DirectWrite or CoreText); on Linux the wheel
+bundles FreeType, FriBidi, HarfBuzz and fontconfig, and libass is linked statically.
 
-The **libass Windows** workflow reuses one `libass-<version>` prerelease tag per libass version. Each run keeps a separate asset named with its assrender commit and UTC build timestamp.
+## Build instructions
+
+[Meson](https://mesonbuild.com/) builds the plugin. Without a system libass, libass and its dependencies come from the
+subprojects (`subprojects/*.wrap`):
+
+```
+meson setup build --buildtype release
+meson compile -C build
+python3 test/test_assrender.py build/libassrender.so
+```
+
+`--force-fallback-for=libass,freetype2,fribidi,harfbuzz,libpng,zlib` builds everything from the subprojects even where
+system libraries exist. On Windows add `--vsenv -Db_vscrt=mt` for MSVC with the static runtime.
 
 ## Licenses
-For all modules: see msvc/licenses
+The repository carries no license file. libass is ISC licensed, FreeType FTL/GPLv2, FriBidi LGPL 2.1, HarfBuzz MIT.
 
 ## Links
 * Doom9 forum: https://forum.doom9.org/showthread.php?t=148926

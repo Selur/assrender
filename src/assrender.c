@@ -190,41 +190,37 @@ void VS_CC assrender_destroy_vs(void* instanceData, VSCore* core, const VSAPI* v
     free(d);
 
 }
-void VS_CC assrender_init_vs(VSMap* in, VSMap* out, void** instanceData, VSNode* node, VSCore* core, const VSAPI* vsapi) {
-    const VS_FilterInfo* d = *instanceData;
-    vsapi->setVideoInfo(d->vi, 1, node);
-}
 void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCore* core, const VSAPI* vsapi) {
     VS_FilterInfo* fi = malloc(sizeof(VS_FilterInfo));
-    fi->node = vsapi->propGetNode(in, "clip", 0, NULL);
+    fi->node = vsapi->mapGetNode(in, "clip", 0, NULL);
     fi->vi = vsapi->getVideoInfo(fi->node);
     fi->prop = NULL;
     char e[256] = {0};
     int err = 0;
 
-    const char* vfr = vsapi->propGetData(in, "vfr", 0, &err);
-    int h = vsapi->propGetInt(in, "hinting", 0, &err);
-    double scale = vsapi->propGetFloat(in, "scale", 0, &err);
+    const char* vfr = vsapi->mapGetData(in, "vfr", 0, &err);
+    int h = vsapi->mapGetInt(in, "hinting", 0, &err);
+    double scale = vsapi->mapGetFloat(in, "scale", 0, &err);
     if (err) scale = 1.0;
-    double line_spacing = vsapi->propGetFloat(in, "line_spacing", 0, &err);
-    int frame_width = vsapi->propGetInt(in, "frame_width", 0, &err);
-    int frame_height = vsapi->propGetInt(in, "frame_height", 0, &err);
-    double dar = vsapi->propGetFloat(in, "dar", 0, &err);
-    double sar = vsapi->propGetFloat(in, "sar", 0, &err);
-    int set_default_storage_size = vsapi->propGetInt(in, "set_default_storage_size", 0, &err);
+    double line_spacing = vsapi->mapGetFloat(in, "line_spacing", 0, &err);
+    int frame_width = vsapi->mapGetInt(in, "frame_width", 0, &err);
+    int frame_height = vsapi->mapGetInt(in, "frame_height", 0, &err);
+    double dar = vsapi->mapGetFloat(in, "dar", 0, &err);
+    double sar = vsapi->mapGetFloat(in, "sar", 0, &err);
+    int set_default_storage_size = vsapi->mapGetInt(in, "set_default_storage_size", 0, &err);
     if (err) set_default_storage_size = 1;
-    int top = vsapi->propGetInt(in, "top", 0, &err);
-    int bottom = vsapi->propGetInt(in, "bottom", 0, &err);
-    int left = vsapi->propGetInt(in, "left", 0, &err);
-    int right = vsapi->propGetInt(in, "right", 0, &err);
-    const char* cs = vsapi->propGetData(in, "charset", 0, &err);
+    int top = vsapi->mapGetInt(in, "top", 0, &err);
+    int bottom = vsapi->mapGetInt(in, "bottom", 0, &err);
+    int left = vsapi->mapGetInt(in, "left", 0, &err);
+    int right = vsapi->mapGetInt(in, "right", 0, &err);
+    const char* cs = vsapi->mapGetData(in, "charset", 0, &err);
     if (err) cs = NULL;
-    int debuglevel = vsapi->propGetInt(in, "debuglevel", 0, &err);
-    const char* fontdir = vsapi->propGetData(in, "fontdir", 0, &err);
+    int debuglevel = vsapi->mapGetInt(in, "debuglevel", 0, &err);
+    const char* fontdir = vsapi->mapGetData(in, "fontdir", 0, &err);
     if (err) fontdir = "";
-    const char* srt_font = vsapi->propGetData(in, "srt_font", 0, &err);
+    const char* srt_font = vsapi->mapGetData(in, "srt_font", 0, &err);
     if (err) srt_font = "sans-serif";
-    const char* colorspace = vsapi->propGetData(in, "colorspace", 0, &err);
+    const char* colorspace = vsapi->mapGetData(in, "colorspace", 0, &err);
     if (err) colorspace = "";
 
     char* tmpcsp = calloc(1, BUFSIZ);
@@ -258,7 +254,7 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         hinting = ASS_HINTING_NATIVE;
         break;
     default:
-        vsapi->setError(out, "AssRender: invalid hinting mode");
+        vsapi->mapSetError(out, "AssRender: invalid hinting mode");
         return;
     }
 
@@ -270,20 +266,20 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         top, bottom, left, right, debuglevel,
         fontdir, data)
     ) {
-        vsapi->setError(out, "AssRender: failed to initialize");
+        vsapi->mapSetError(out, "AssRender: failed to initialize");
         return;
     }
 
     if (!strcmp(userData, "TextSub")) {
-        const char* f = vsapi->propGetData(in, "file", 0, &err);
+        const char* f = vsapi->mapGetData(in, "file", 0, &err);
         if (!f) {
-            vsapi->setError(out, "AssRender: no input file specified");
+            vsapi->mapSetError(out, "AssRender: no input file specified");
             return;
         }
         if (!strcasecmp(strrchr(f, '.'), ".srt")) {
             FILE* fp = open_utf8_filename(f, "r");
             if (!fp) {
-                vsapi->setError(out, "AssRender: input file does not exist or is not a regular file");
+                vsapi->mapSetError(out, "AssRender: input file does not exist or is not a regular file");
                 return;
             }
             ass = parse_srt(fp, data, srt_font);
@@ -291,7 +287,7 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         else {
             FILE* fp = open_utf8_filename(f, "rb");
             if (!fp) {
-                vsapi->setError(out, "AssRender: input file does not exist or is not a regular file");
+                vsapi->mapSetError(out, "AssRender: input file does not exist or is not a regular file");
                 return;
             }
             size_t bufsize;
@@ -304,28 +300,28 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
     }
     else if (!strcmp(userData, "Subtitle")){
 #define BUFFER_SIZE 16
-        int ntext = vsapi->propNumElements(in, "text");
+        int ntext = vsapi->mapNumElements(in, "text");
         if (ntext < 1) {
-            vsapi->setError(out, "AssRender: No text to be rendered");
+            vsapi->mapSetError(out, "AssRender: No text to be rendered");
             return;
         }
         
         char const ** const texts = malloc(ntext * sizeof(char *));
         int *text_lengths = malloc(ntext * sizeof(int));
         for (int i = 0; i < ntext; i++) {
-            texts[i] = vsapi->propGetData(in, "text", i, &err);
+            texts[i] = vsapi->mapGetData(in, "text", i, &err);
             if (err) texts[i] = "";
             texts[i] = strrepl(texts[i], "\n", "\\N");
             text_lengths[i] = strlen(texts[i]);
         }
 
-        const char *style = vsapi->propGetData(in, "style", 0, &err);
+        const char *style = vsapi->mapGetData(in, "style", 0, &err);
         if (err) style = "sans-serif,20,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,7,10,10,10,1";
 
         int *startframes = malloc(ntext * sizeof(int));
         int *endframes = malloc(ntext * sizeof(int));
-        int nstart = vsapi->propNumElements(in, "start");
-        int nend = vsapi->propNumElements(in, "end");
+        int nstart = vsapi->mapNumElements(in, "start");
+        int nend = vsapi->mapNumElements(in, "end");
         int nspan = nstart < nend ? nstart : nend;
         if (nspan < 1) {
             for (int i = 0; i < ntext; i++)
@@ -333,9 +329,9 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         }
         else {
             for (int i = 0; i < nspan; i++) {
-                startframes[i] = vsapi->propGetInt(in, "start", i, &err);
+                startframes[i] = vsapi->mapGetInt(in, "start", i, &err);
                 if (err) startframes[i] = 0;
-                endframes[i] = vsapi->propGetInt(in, "end", i, &err);
+                endframes[i] = vsapi->mapGetInt(in, "end", i, &err);
                 if (err) endframes[i] = fi->vi->numFrames;
             }
             for (int i = nspan; i < ntext; ++i) {
@@ -400,14 +396,14 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         free((void *)texts);
 
         if (*e)
-            vsapi->setError(out, e);
+            vsapi->mapSetError(out, e);
 
     } else { // if (!strcmp(userData, "FrameProp")){
-        const char *prop = vsapi->propGetData(in, "prop", 0, &err);
+        const char *prop = vsapi->mapGetData(in, "prop", 0, &err);
         if (!prop) prop = "ass";
         fi->prop = strdup(prop);
 
-        const char *style = vsapi->propGetData(in, "style", 0, &err);
+        const char *style = vsapi->mapGetData(in, "style", 0, &err);
         if (err) style = "sans-serif,20,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,7,10,10,10,1";
 
         char x[BUFFER_SIZE], y[BUFFER_SIZE];
@@ -434,13 +430,13 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         free(final_text);
 
         if (*e)
-            vsapi->setError(out, e);
+            vsapi->mapSetError(out, e);
 
 #undef BUFFER_SIZE
     }
 
     if (!ass) {
-        vsapi->setError(out, "AssRender: unable to parse ass text");
+        vsapi->mapSetError(out, "AssRender: unable to parse ass text");
         return;
     }
 
@@ -452,7 +448,7 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
 
         if (!fh) {
             snprintf(e, 256, "AssRender: could not read timecodes file '%s'", vfr);
-            vsapi->setError(out, e);
+            vsapi->mapSetError(out, e);
             return;
         }
 
@@ -460,7 +456,7 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
 
         if (fscanf(fh, "# timecode format v%d", &ver) != 1) {
             snprintf(e, 256, "AssRender: invalid timecodes file '%s'", vfr);
-            vsapi->setError(out, e);
+            vsapi->mapSetError(out, e);
             return;
         }
 
@@ -468,7 +464,7 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         case 1:
 
             if (!parse_timecodesv1(fh, fi->vi->numFrames, data)) {
-                vsapi->setError(out, "AssRender: error parsing timecodes file");
+                vsapi->mapSetError(out, "AssRender: error parsing timecodes file");
                 return;
             }
 
@@ -476,7 +472,7 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         case 2:
 
             if (!parse_timecodesv2(fh, fi->vi->numFrames, data)) {
-                vsapi->setError(out, "AssRender: timecodes file had less frames than expected");
+                vsapi->mapSetError(out, "AssRender: timecodes file had less frames than expected");
                 return;
             }
 
@@ -491,7 +487,7 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
 
     matrix_type color_mt;
 
-    if (fi->vi->format->colorFamily == cmRGB) {
+    if (fi->vi->format.colorFamily == cfRGB) {
         color_mt = MATRIX_NONE; // no RGB->YUV conversion
     }
     else {
@@ -543,21 +539,22 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
 
     FillMatrix(&data->mx, color_mt);
 
-    const int bits_per_pixel = fi->vi->format->bitsPerSample;
-    const int pixelsize = fi->vi->format->bytesPerSample;
-    const int greyscale = fi->vi->format->colorFamily == cmGray;
+    const int bits_per_pixel = fi->vi->format.bitsPerSample;
+    const int pixelsize = fi->vi->format.bytesPerSample;
+    const int greyscale = fi->vi->format.colorFamily == cfGray;
 
     if (bits_per_pixel == 8)
         data->f_make_sub_img = make_sub_img;
     else if (bits_per_pixel <= 16)
         data->f_make_sub_img = make_sub_img16;
     else {
-        vsapi->setError(out, "AssRender: unsupported bit depth: 32");
+        vsapi->mapSetError(out, "AssRender: unsupported bit depth: 32");
         return;
     }
 
 
-    switch (fi->vi->format->id)
+    switch (vsapi->queryVideoFormatID(fi->vi->format.colorFamily, fi->vi->format.sampleType, fi->vi->format.bitsPerSample,
+                                      fi->vi->format.subSamplingW, fi->vi->format.subSamplingH, core))
     {
     case pfYUV420P8:
         data->apply = apply_yv12;
@@ -595,7 +592,7 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         data->apply = apply_y;
         break;
     default:
-        vsapi->setError(out, "AssRender: unsupported pixel type");
+        vsapi->mapSetError(out, "AssRender: unsupported pixel type");
         return;
     }
 
@@ -610,12 +607,13 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
 
     data->bits_per_pixel = bits_per_pixel;
     data->pixelsize = pixelsize;
-    data->rgb_fullscale = fi->vi->format->colorFamily == cmRGB;
+    data->rgb_fullscale = fi->vi->format.colorFamily == cfRGB;
     data->greyscale = greyscale;
 
     fi->user_data = data;
 
-    vsapi->createFilter(in, out, userData, assrender_init_vs, assrender_get_frame_vs, assrender_destroy_vs, fmParallelRequests, 0, fi, core);
+    VSFilterDependency deps[] = { { fi->node, rpStrictSpatial } };
+    vsapi->createVideoFilter(out, userData, fi->vi, assrender_get_frame_vs, assrender_destroy_vs, fmParallelRequests, deps, 1, fi, core);
 
     return;
 }
@@ -638,25 +636,28 @@ void VS_CC assrender_create_vs(const VSMap* in, VSMap* out, void* userData, VSCo
         "fontdir:data:opt;" \
         "srt_font:data:opt;" \
         "colorspace:data:opt;",
-void VS_CC VapourSynthPluginInit(VSConfigPlugin configFunc, VSRegisterFunction registerFunc, VSPlugin* plugin) {
-    configFunc("com.pinterf.assrender", "assrender", "AssRender", VAPOURSYNTH_API_VERSION, 1, plugin);
-    registerFunc("TextSub",
-        "clip:clip;"
+VS_EXTERNAL_API(void) VapourSynthPluginInit2(VSPlugin* plugin, const VSPLUGINAPI* vspapi) {
+    vspapi->configPlugin("com.pinterf.assrender", "assrender", "AssRender", VS_MAKE_VERSION(0, 39), VAPOURSYNTH_API_VERSION, 0, plugin);
+    vspapi->registerFunction("TextSub",
+        "clip:vnode;"
         "file:data;"
         COMMON_PARAMS
+        "clip:vnode;",
         assrender_create_vs, "TextSub", plugin);
-    registerFunc("Subtitle",
-        "clip:clip;"
+    vspapi->registerFunction("Subtitle",
+        "clip:vnode;"
         "text:data[];"
         "style:data:opt;"
         "start:int[]:opt;"
         "end:int[]:opt;"
         COMMON_PARAMS
+        "clip:vnode;",
         assrender_create_vs, "Subtitle", plugin);
-    registerFunc("FrameProp",
-        "clip:clip;"
+    vspapi->registerFunction("FrameProp",
+        "clip:vnode;"
         "prop:data:opt;"
         "style:data:opt;"
         COMMON_PARAMS
+        "clip:vnode;",
         assrender_create_vs, "FrameProp", plugin);
 }
