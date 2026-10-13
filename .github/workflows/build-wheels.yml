@@ -21,6 +21,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Diagnose the wheel build (Windows)
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        shell: bash
+        run: |
+          python -m pip install build
+          set +e
+          python -m build --wheel --outdir diag -Csetup-args=--vsenv -Csetup-args=-Db_vscrt=mt             -Csetup-args=--force-fallback-for=libass,freetype2,fribidi,harfbuzz,libpng,zlib > diag.log 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then grep -v '^\s*$' diag.log | tail -25 | sed 's/^/::error::/'; fi
+          exit $status
+
       - name: Build wheel
         uses: pypa/cibuildwheel@v4.3
         env:
