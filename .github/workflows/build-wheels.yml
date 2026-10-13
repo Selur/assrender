@@ -21,6 +21,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Diagnose the wheel build (Linux)
+        if: runner.os == 'Linux'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          docker run --rm -v "$PWD":/project quay.io/pypa/manylinux_2_28_x86_64 bash -c "dnf install -y freetype-devel fribidi-devel harfbuzz-devel fontconfig-devel > /dev/null && /opt/python/cp312-cp312/bin/python -m pip install -q build && cd /project && /opt/python/cp312-cp312/bin/python -m build --wheel --outdir /tmp/diag -Csetup-args=--force-fallback-for=libass" > diag.log 2>&1
+          status=$?
+          if [ $status -ne 0 ]; then grep -nE "ERROR|error|Error|FAILED|undefined|not found|Traceback" diag.log | head -40 | sed 's/^/::error::/'; fi
+          exit $status
+
       - name: Build wheel
         uses: pypa/cibuildwheel@v4.3
         env:
