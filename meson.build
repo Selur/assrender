@@ -24,8 +24,11 @@ sources = files(
   'src/timecodes.c',
 )
 
+c_args = []
 link_args = []
 if host == 'linux'
+  # strdup and strcasecmp are hidden by c_std=c11 on glibc.
+  c_args += ['-D_GNU_SOURCE']
   # The statically linked libass and its dependencies stay private to the plugin.
   link_args += ['-Wl,--exclude-libs,ALL']
 endif
@@ -49,6 +52,7 @@ endif
 shared_module('assrender', sources,
   include_directories : include_directories('src', 'src/include'),
   dependencies : libass_dep,
+  c_args : c_args,
   link_args : link_args,
   install : true,
   install_dir : install_dir,
