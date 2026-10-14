@@ -36,12 +36,24 @@ jobs:
           CIBW_BEFORE_ALL_LINUX: dnf install -y freetype-devel fribidi-devel harfbuzz-devel fontconfig-devel dejavu-sans-fonts liberation-sans-fonts
           CIBW_CONFIG_SETTINGS_LINUX: setup-args=--force-fallback-for=libass
           # Windows and macOS: libass and all its dependencies statically from the subprojects.
-          CIBW_CONFIG_SETTINGS_MACOS: setup-args=--force-fallback-for=libass,freetype2,fribidi,harfbuzz,libpng,zlib
+          # FreeType's optional brotli/bzip2 (WOFF2 and .pcf.bz2 fonts) are switched off: on the runner meson found Homebrew's
+          # brotli, and with the repair step off the wheel linked /opt/homebrew/opt/brotli/lib/libbrotlidec.1.dylib.
+          CIBW_CONFIG_SETTINGS_MACOS: setup-args=--force-fallback-for=libass,freetype2,fribidi,harfbuzz,libpng,zlib setup-args=-Dfreetype2:brotli=disabled setup-args=-Dfreetype2:bzip2=disabled
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: ''
           # MSVC instead of the MinGW g++ on the runner, runtime linked statically, so delvewheel would have nothing to bundle.
           CIBW_CONFIG_SETTINGS_WINDOWS: setup-args=--vsenv setup-args=-Db_vscrt=mt setup-args=--force-fallback-for=libass,freetype2,fribidi,harfbuzz,libpng,zlib
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ''
           CIBW_TEST_COMMAND: python {project}/test/test_assrender.py
+
+      - name: Check that the macOS plugin links only system libraries
+        if: runner.os == 'macOS'
+        run: |
+          mkdir check && cd check && unzip -q ../wheelhouse/*.whl
+          otool -L vapoursynth/plugins/libassrender.dylib
+          if otool -L vapoursynth/plugins/libassrender.dylib | tail -n +2 | grep -v -E '^\s+(/usr/lib/|/System/Library/)'; then
+            echo "::error::libassrender.dylib links libraries outside /usr/lib and /System/Library"
+            exit 1
+          fi
 
       - name: Re-tag wheel as Python-independent
         shell: bash
