@@ -1,7 +1,7 @@
 project('assrender', 'c',
   default_options : ['buildtype=release', 'b_ndebug=if-release', 'c_std=c11', 'default_library=static'],
   meson_version : '>=1.1.0',
-  version : '0.39.0'
+  version : '0.39.1'
 )
 
 cc = meson.get_compiler('c')
